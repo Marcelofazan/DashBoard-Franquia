@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { env } from '@/env'
-import { getResponse } from 'msw' // 💡 Função oficial para capturar respostas dos handlers
+import { getResponse } from 'msw'
 
 export const api = axios.create({
   baseURL: env.VITE_API_URL === '/' ? window.location.origin : env.VITE_API_URL,
@@ -24,16 +24,18 @@ if (env.VITE_ENABLED_API_DELAY === true) {
       const { worker } = await import('@/api/mocks')
       const handlers = worker.listHandlers()
       
-      // Constrói a URL absoluta que o Axios simularia no navegador
-      const mockRequestUrl = window.location.origin + (config.url?.startsWith('/') ? config.url : `/${config.url}`)
+      // 💡 Garante que a rota comece com uma barra inicial '/'
+      const cleanPath = config.url?.startsWith('/') ? config.url : `/${config.url}`
       
-      // Cria um objeto nativo Request padronizado para o MSW processar
+      // 💡 Constrói a URL absoluta baseada NO DOMÍNIO LOCAL ATUAL (Seja localhost ou Vercel)
+      // Isso força o MSW a reconhecer a rota mesmo rodando sob o HTTPS da nuvem
+      const mockRequestUrl = new URL(cleanPath, window.location.origin).toString()
+      
       const req = new Request(mockRequestUrl, { 
         method: config.method?.toUpperCase(),
         headers: new Headers(config.headers as Record<string, string>),
       })
       
-      // 💡 O getResponse alimenta a lista de handlers e devolve a Response simulada nativamente
       const mockedResponse = await getResponse(handlers, req)
       
       if (mockedResponse) {
