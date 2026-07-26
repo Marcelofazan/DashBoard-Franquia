@@ -2,6 +2,12 @@
   "name": "dashboard-franquia",
   "version": "1.0.0",
   "packageManager": "pnpm@10.0.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "msw"
+    ]
+  },
   "scripts": {
     "dev": "vite",
     "dev:test": "vite --port 50789 --mode test",
