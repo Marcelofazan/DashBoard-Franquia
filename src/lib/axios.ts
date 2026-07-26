@@ -1,4 +1,4 @@
-import axios, { AxiosError } from 'axios'
+import axios from 'axios'
 import { env } from '@/env'
 
 export const api = axios.create({
@@ -6,33 +6,45 @@ export const api = axios.create({
   withCredentials: true,
 })
 
-// Intercepta e responde nativamente no cliente se os mocks estiverem ativos
+interface MockShortCircuit {
+  __isMockResponse: boolean
+  response: {
+    data: unknown
+    status: number
+    statusText: string
+    headers: Record<string, string>
+    config: unknown
+  }
+}
+
 if (env.VITE_ENABLED_API_DELAY === true) {
   api.interceptors.request.use(async (config) => {
     try {
       const { worker } = await import('@/api/mocks')
       const handlers = worker.listHandlers()
       
-      // Remove parâmetros de busca e garante a rota limpa (ex: /metrics/month-receipt)
       const targetUrl = config.url?.split('?')[0] || ''
       
       for (const handler of handlers) {
         const info = handler.info
         const path = typeof info.path === 'string' ? info.path : info.path.toString()
         
-        // Valida se o método HTTP e a rota coincidem com o mock registrado
         if (path.includes(targetUrl) && info.method.toLowerCase() === config.method?.toLowerCase()) {
           const mockRequestUrl = window.location.origin + (config.url?.startsWith('/') ? config.url : `/${config.url}`)
+          const req = new Request(mockRequestUrl, { method: config.method?.toUpperCase() })
           
-          const resolverResponse = await handler.run({
-            request: new Request(mockRequestUrl, { method: config.method?.toUpperCase() }),
+          // 💡 Executa o resolver diretamente passando as propriedades básicas exigidas
+          const resolverResponse = await handler.resolver({
+            request: req,
+            params: {},
+            cookies: {},
+            requestId: Math.random().toString(36).substring(7)
           })
           
-          if (resolverResponse?.response) {
-            const json = await resolverResponse.response.json()
+          if (resolverResponse) {
+            const json = await resolverResponse.json()
             
-            // 💡 Força um curto-circuito seguro rejeitando a requisição com os dados do mock
-            return Promise.reject({
+            const mockResponse: MockShortCircuit = {
               __isMockResponse: true,
               response: {
                 data: json,
@@ -41,12 +53,13 @@ if (env.VITE_ENABLED_API_DELAY === true) {
                 headers: {},
                 config,
               }
-            })
+            }
+            
+            return Promise.reject(mockResponse)
           }
         }
       }
     } catch (error) {
-      // Se não for nossa resposta de mock controlada, repassa o erro adiante
       if (error && typeof error === 'object' && '__isMockResponse' in error) {
         return Promise.reject(error)
       }
@@ -55,12 +68,11 @@ if (env.VITE_ENABLED_API_DELAY === true) {
     return config
   })
 
-  // Captura o curto-circuito do request e o transforma em um retorno de sucesso (200 OK)
   api.interceptors.response.use(
     (response) => response,
     (error) => {
-      if (error && error.__isMockResponse) {
-        return Promise.resolve(error.response)
+      if (error && (error as MockShortCircuit).__isMockResponse) {
+        return Promise.resolve((error as MockShortCircuit).response)
       }
       return Promise.reject(error)
     }
