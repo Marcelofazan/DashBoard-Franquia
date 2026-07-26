@@ -1,10 +1,10 @@
 import axios from 'axios'
-
 import { env } from '@/env'
 
 export const api = axios.create({
-  baseURL: env.VITE_API_URL,
-  withCredentials: true, // enable cookies to be sent with requests
+  // Garante que não use caminhos relativos puros se quebrar na nuvem
+  baseURL: env.VITE_API_URL === '/' ? window.location.origin : env.VITE_API_URL,
+  withCredentials: true, // Padrão do PizzaShop para envio de cookies dos mocks
 })
 
 if (env.VITE_ENABLED_API_DELAY) {
