@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "vite",
     "dev:test": "vite --port 50789 --mode test",
-    "build": "tsc && vite build",
+    "build": "pnpm msw init ./public --save && tsc && vite build",
     "lint": "eslint . --ext ts,tsx --fix",
     "preview": "vite preview",
     "test": "vitest"
