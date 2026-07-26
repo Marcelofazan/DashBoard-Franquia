@@ -11,5 +11,5 @@ pnpm install
 - Executar o Build do Projeto
 
 ```bash
-pnpm run dev
+pnpm dev
 ```
