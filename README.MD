@@ -6,10 +6,10 @@ Exemplo de Dashboard em React 18.
 #### 🔄 Executar a aplicação
 - Recuperar as dependencias do projeto node_modules . 
 ```bash
-npm install
+pnpm install
 ```
 - Executar o Build do Projeto
 
 ```bash
-npm run dev
+pnpm run dev
 ```
