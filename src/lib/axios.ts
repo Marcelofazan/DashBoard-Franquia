@@ -32,14 +32,16 @@ if (env.VITE_ENABLED_API_DELAY === true) {
         (handler): handler is HttpHandler => handler instanceof HttpHandler
       )
       
-      // 💡 CORREÇÃO DEFINITIVA: Usa o Axios para gerar a URL exata com as Query Strings (?from=...&to=...)
-      const fullPathWithParams = api.getUri(config)
+      // 1. Calcula a URI bruta montada pelo Axios (pode vir com domínio ou relativa)
+      const rawUri = api.getUri(config)
       
-      // Garante a formatação correta do caminho inicial com barra '/'
-      const cleanPath = fullPathWithParams.startsWith('/') ? fullPathWithParams : `/${fullPathWithParams}`
-      
+      // 2. Extrai estritamente a sub-rota limpa com as query strings, descartando domínios duplicados
       const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost'
-      const mockRequestUrl = new URL(cleanPath, currentOrigin).toString()
+      const parsedUri = new URL(rawUri, currentOrigin)
+      const cleanPathWithParams = parsedUri.pathname + parsedUri.search
+      
+      // 3. Monta a URL canônica exata esperada pelo motor do MSW v2
+      const mockRequestUrl = new URL(cleanPathWithParams, currentOrigin).toString()
       
       const requestHeaders = new Headers()
       if (config.headers) {
