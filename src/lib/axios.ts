@@ -2,8 +2,12 @@ import axios from 'axios'
 import { env } from '@/env'
 import { getResponse } from 'msw'
 
+const baseURL = env.VITE_API_URL === '/' 
+  ? (typeof window !== 'undefined' ? window.location.origin : '') 
+  : env.VITE_API_URL
+
 export const api = axios.create({
-  baseURL: env.VITE_API_URL === '/' ? window.location.origin : env.VITE_API_URL,
+  baseURL,
   withCredentials: true,
 })
 
@@ -24,19 +28,27 @@ if (env.VITE_ENABLED_API_DELAY === true) {
       const { worker } = await import('@/api/mocks')
       const handlers = worker.listHandlers()
       
-      // 💡 Garante que a rota comece com uma barra inicial '/'
       const cleanPath = config.url?.startsWith('/') ? config.url : `/${config.url}`
       
-      // 💡 Constrói a URL absoluta baseada NO DOMÍNIO LOCAL ATUAL (Seja localhost ou Vercel)
-      // Isso força o MSW a reconhecer a rota mesmo rodando sob o HTTPS da nuvem
-      const mockRequestUrl = new URL(cleanPath, window.location.origin).toString()
+      const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost'
+      const mockRequestUrl = new URL(cleanPath, currentOrigin).toString()
+      
+      const requestHeaders = new Headers()
+      if (config.headers) {
+        Object.entries(config.headers).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            requestHeaders.append(key, String(value))
+          }
+        })
+      }
       
       const req = new Request(mockRequestUrl, { 
         method: config.method?.toUpperCase(),
-        headers: new Headers(config.headers as Record<string, string>),
+        headers: requestHeaders,
       })
       
-      const mockedResponse = await getResponse(handlers, req)
+      // 💡 CORREÇÃO AQUI: Criamos uma cópia mutável usando [...handlers] como exigido pelo tipo do MSW v2
+      const mockedResponse = await getResponse([...handlers], req)
       
       if (mockedResponse) {
         const json = await mockedResponse.json()
