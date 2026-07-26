@@ -41,11 +41,10 @@ export const worker = setupWorker(
 )
 
 export async function enableMSW() {
-  // Permite rodar se for modo de teste, desenvolvimento OU se o delay estiver ativado (booleano)
   if (
     env.MODE !== 'test' && 
     env.MODE !== 'development' && 
-    env.VITE_ENABLED_API_DELAY !== true // 💡 Removidas as aspas aqui!
+    env.VITE_ENABLED_API_DELAY !== true
   ) {
     return
   }
@@ -53,7 +52,10 @@ export async function enableMSW() {
   await worker.start({
     onUnhandledRequest: 'bypass', 
     serviceWorker: {
-      url: '/mockServiceWorker.js',
+      // Opcional: Define o escopo explicitamente para a raiz para interceptar todas as sub-rotas
+      options: {
+        scope: '/',
+      },
     }
   })
 }
