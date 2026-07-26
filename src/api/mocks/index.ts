@@ -41,13 +41,19 @@ export const worker = setupWorker(
 )
 
 export async function enableMSW() {
-  // Ativa os mocks se estiver em modo de teste OU em desenvolvimento
-  if (env.MODE !== 'test' && env.MODE !== 'development') {
+  // Permite rodar se for modo de teste, desenvolvimento OU se o delay estiver ativado (booleano)
+  if (
+    env.MODE !== 'test' && 
+    env.MODE !== 'development' && 
+    env.VITE_ENABLED_API_DELAY !== true // 💡 Removidas as aspas aqui!
+  ) {
     return
   }
 
   await worker.start({
-    // Evita avisos desnecessários de rotas internas do Vite no console
     onUnhandledRequest: 'bypass', 
+    serviceWorker: {
+      url: '/mockServiceWorker.js',
+    }
   })
 }
