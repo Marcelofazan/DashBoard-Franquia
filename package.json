@@ -1,7 +1,7 @@
 {
   "name": "dashboard-franquia",
   "version": "1.0.0",
-  "packageManager": "pnpm@9.15.0",
+  "packageManager": "pnpm@10.0.0",
   "scripts": {
     "dev": "vite",
     "dev:test": "vite --port 50789 --mode test",
