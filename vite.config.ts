@@ -1,9 +1,7 @@
+/// <reference types="vitest" />
 import path from 'node:path'
-
 import react from '@vitejs/plugin-react'
-import type { UserConfig } from 'vite'
 import { defineConfig } from 'vite'
-import type { InlineConfig } from 'vitest'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -13,11 +11,21 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Divide e move as dependências pesadas do node_modules para um arquivo separado (vendor)
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            return 'vendor'
+          }
+        },
+      },
+    },
+  },
   test: {
     globals: true,
     setupFiles: ['./test/setup.ts'],
     environment: 'happy-dom',
   },
-} as UserConfig & {
-  test: InlineConfig
 })
