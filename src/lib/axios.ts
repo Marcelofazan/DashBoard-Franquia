@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { env } from '@/env'
-import { getResponse, HttpHandler } from 'msw' // 💡 Importado o HttpHandler para filtragem
+import { getResponse, HttpHandler } from 'msw'
 
 const baseURL = env.VITE_API_URL === '/' 
   ? (typeof window !== 'undefined' ? window.location.origin : '') 
@@ -28,12 +28,15 @@ if (env.VITE_ENABLED_API_DELAY === true) {
       const { worker } = await import('@/api/mocks')
       const handlers = worker.listHandlers()
       
-      // 💡 CORREÇÃO AQUI: Filtra apenas manipuladores HTTP válidos e gera um array limpo
       const httpHandlers = handlers.filter(
         (handler): handler is HttpHandler => handler instanceof HttpHandler
       )
       
-      const cleanPath = config.url?.startsWith('/') ? config.url : `/${config.url}`
+      // 💡 CORREÇÃO DEFINITIVA: Usa o Axios para gerar a URL exata com as Query Strings (?from=...&to=...)
+      const fullPathWithParams = api.getUri(config)
+      
+      // Garante a formatação correta do caminho inicial com barra '/'
+      const cleanPath = fullPathWithParams.startsWith('/') ? fullPathWithParams : `/${fullPathWithParams}`
       
       const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost'
       const mockRequestUrl = new URL(cleanPath, currentOrigin).toString()
@@ -52,7 +55,6 @@ if (env.VITE_ENABLED_API_DELAY === true) {
         headers: requestHeaders,
       })
       
-      // 💡 Passa o array filtrado com a tipagem estrita resolvida para o getResponse
       const mockedResponse = await getResponse(httpHandlers, req)
       
       if (mockedResponse) {
