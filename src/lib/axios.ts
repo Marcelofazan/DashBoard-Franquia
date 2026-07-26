@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { env } from '@/env'
-import { getResponse } from 'msw'
+import { getResponse, HttpHandler } from 'msw' // 💡 Importado o HttpHandler para filtragem
 
 const baseURL = env.VITE_API_URL === '/' 
   ? (typeof window !== 'undefined' ? window.location.origin : '') 
@@ -28,6 +28,11 @@ if (env.VITE_ENABLED_API_DELAY === true) {
       const { worker } = await import('@/api/mocks')
       const handlers = worker.listHandlers()
       
+      // 💡 CORREÇÃO AQUI: Filtra apenas manipuladores HTTP válidos e gera um array limpo
+      const httpHandlers = handlers.filter(
+        (handler): handler is HttpHandler => handler instanceof HttpHandler
+      )
+      
       const cleanPath = config.url?.startsWith('/') ? config.url : `/${config.url}`
       
       const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost'
@@ -47,8 +52,8 @@ if (env.VITE_ENABLED_API_DELAY === true) {
         headers: requestHeaders,
       })
       
-      // 💡 CORREÇÃO AQUI: Criamos uma cópia mutável usando [...handlers] como exigido pelo tipo do MSW v2
-      const mockedResponse = await getResponse([...handlers], req)
+      // 💡 Passa o array filtrado com a tipagem estrita resolvida para o getResponse
+      const mockedResponse = await getResponse(httpHandlers, req)
       
       if (mockedResponse) {
         const json = await mockedResponse.json()
