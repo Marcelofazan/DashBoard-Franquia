@@ -2,7 +2,7 @@
 Exemplo de Dashboard em React 18 Radix.
 
 #### 🎨 Aqui está uma demonstração do Projeto
-https://vercel.com/marcelofazans-projects/dash-board-franquia/FW4LsQApoQSFydq2eKZHL7qx3b5g
+https://dash-board-franquia-5w4xyxb8f-marcelofazans-projects.vercel.app/
 
 #### 🔄 Executar a aplicação
 - Recuperar as dependencias do projeto node_modules . 
